@@ -1,0 +1,48 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>全部完成 - VocabMaster</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 0;
+        }
+        .message {
+            background: white;
+            padding: 60px;
+            border-radius: 20px;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        h1 { color: #2d3748; margin-bottom: 20px; }
+        p { color: #718096; font-size: 18px; margin-bottom: 30px; }
+        a {
+            display: inline-block;
+            padding: 15px 30px;
+            background: #667eea;
+            color: white;
+            text-decoration: none;
+            border-radius: 10px;
+            transition: all 0.3s;
+        }
+        a:hover { background: #5568d3; transform: scale(1.05); }
+    </style>
+</head>
+<body>
+    <div class="message">
+        <h1>🎉 太棒了！</h1>
+        <p>你已经完成了所有待复习的单词</p>
+        <a href="{% url 'dashboard' %}">返回首页</a>
+        <br><br>
+        <a href="/study/" style="background: #48bb78;">学习新单词</a>
+    </div>
+</body>
+</html>
+
+

@@ -1,0 +1,35 @@
+# Django
+*.log
+*.pot
+*.pyc
+__pycache__/
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+media
+
+# 虚拟环境
+venv/
+env/
+ENV/
+
+# 环境变量（敏感信息！）
+.env
+.env.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# 系统文件
+.DS_Store
+Thumbs.db
+
+# 静态文件（生产环境收集的，不推源码）
+staticfiles/
+
+# 其他
+*.bak
+*.tmp

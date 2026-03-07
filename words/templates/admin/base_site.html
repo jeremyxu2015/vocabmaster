@@ -1,0 +1,300 @@
+﻿{% extends "admin/base.html" %}
+
+{% block title %}{{ title }} | VocabMaster 管理后台{% endblock %}
+
+{% block branding %}
+<a href="{% url 'admin:index' %}" style="display: flex; align-items: center; gap: 10px; text-decoration: none;">
+    <span style="font-size: 24px;">📚</span>
+    <span style="color: white; font-size: 20px; font-weight: bold;">VocabMaster</span>
+</a>
+{% endblock %}
+
+{% block extrastyle %}
+<style>
+    :root {
+        --primary: #667eea;
+        --primary-dark: #764ba2;
+        --secondary: #8b5cf6;
+        --success: #10b981;
+        --warning: #f59e0b;
+        --error: #ef4444;
+        --bg-body: #f8fafc;
+        --bg-card: #ffffff;
+        --bg-sidebar: #ffffff;
+        --text-primary: #1e293b;
+        --text-secondary: #64748b;
+        --border-color: #e2e8f0;
+    }
+    
+    /* 暗色模式变量 */
+    @media (prefers-color-scheme: dark) {
+        :root {
+            --bg-body: #0f172a;
+            --bg-card: #1e293b;
+            --bg-sidebar: #1e293b;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --border-color: #334155;
+        }
+        
+        body {
+            background: var(--bg-body) !important;
+            color: var(--text-primary) !important;
+        }
+        
+        #content {
+            background: var(--bg-body) !important;
+        }
+        
+        #content-main {
+            background: var(--bg-card) !important;
+            color: var(--text-primary) !important;
+            border: 1px solid var(--border-color) !important;
+        }
+        
+        #nav-sidebar {
+            background: var(--bg-sidebar) !important;
+            border-right: 1px solid var(--border-color) !important;
+        }
+        
+        .module {
+            background: var(--bg-card) !important;
+            border: 1px solid var(--border-color) !important;
+        }
+        
+        #changelist table tbody td {
+            border-bottom: 1px solid var(--border-color) !important;
+            color: var(--text-primary) !important;
+        }
+        
+        #changelist table thead th {
+            background: #334155 !important;
+            color: var(--text-primary) !important;
+            border-bottom: 2px solid var(--border-color) !important;
+        }
+        
+        #changelist table tbody tr:hover {
+            background: #334155 !important;
+        }
+        
+        input, textarea, select {
+            background: #334155 !important;
+            color: var(--text-primary) !important;
+            border: 2px solid var(--border-color) !important;
+        }
+        
+        .paginator {
+            background: var(--bg-card) !important;
+            color: var(--text-primary) !important;
+            border: 1px solid var(--border-color) !important;
+        }
+        
+        #changelist-filter {
+            background: var(--bg-card) !important;
+            border: 1px solid var(--border-color) !important;
+        }
+        
+        .breadcrumbs {
+            background: var(--bg-card) !important;
+            color: var(--text-primary) !important;
+            border-bottom: 1px solid var(--border-color) !important;
+        }
+        
+        .breadcrumbs a {
+            color: var(--primary) !important;
+        }
+        
+        fieldset {
+            background: var(--bg-card) !important;
+            border: 1px solid var(--border-color) !important;
+        }
+        
+        .aligned label {
+            color: var(--text-primary) !important;
+        }
+        
+        .help {
+            color: var(--text-secondary) !important;
+        }
+        
+        /* 修复最近动作面板 */
+        .dashboard #content-main .module {
+            background: var(--bg-card) !important;
+        }
+        
+        .dashboard #content-main .module h2 {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%) !important;
+        }
+        
+        .dashboard #content-main .module table td {
+            border-bottom: 1px solid var(--border-color) !important;
+            color: var(--text-primary) !important;
+        }
+    }
+    
+    /* 基础样式 */
+    #header {
+        background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%) !important;
+        color: white !important;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
+        padding: 15px 20px !important;
+    }
+    
+    #branding h1 { color: white !important; font-weight: 600 !important; margin: 0 !important; }
+    
+    #user-tools {
+        color: rgba(255,255,255,0.9) !important;
+        font-size: 14px !important;
+    }
+    
+    #user-tools a {
+        color: white !important;
+        border-bottom: 1px solid rgba(255,255,255,0.3) !important;
+        text-decoration: none !important;
+        transition: all 0.3s !important;
+    }
+    
+    #user-tools a:hover {
+        color: #fff !important;
+        border-bottom-color: white !important;
+        background: rgba(255,255,255,0.1) !important;
+        border-radius: 4px !important;
+        padding: 2px 6px !important;
+    }
+    
+    #content { background: var(--bg-body) !important; padding: 20px !important; }
+    
+    #content-main {
+        background: var(--bg-card) !important;
+        border-radius: 12px !important;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
+        padding: 20px !important;
+        color: var(--text-primary) !important;
+    }
+    
+    #nav-sidebar {
+        background: var(--bg-sidebar) !important;
+        border-right: 1px solid var(--border-color) !important;
+        box-shadow: 2px 0 4px rgba(0,0,0,0.05) !important;
+    }
+    
+    .module {
+        background: var(--bg-card) !important;
+        border-radius: 8px !important;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05) !important;
+        margin-bottom: 20px !important;
+        overflow: hidden !important;
+        border: 1px solid var(--border-color) !important;
+    }
+    
+    .module h2, .module caption {
+        background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%) !important;
+        color: white !important;
+        padding: 12px 16px !important;
+        border-radius: 8px 8px 0 0 !important;
+        font-weight: 600 !important;
+        font-size: 14px !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.5px !important;
+        margin: 0 !important;
+    }
+    
+    #changelist table thead th {
+        background: #f8fafc !important;
+        color: var(--text-primary) !important;
+        font-weight: 600 !important;
+        padding: 12px !important;
+        border-bottom: 2px solid var(--border-color) !important;
+    }
+    
+    #changelist table tbody tr { transition: background 0.2s !important; }
+    #changelist table tbody tr:hover { background: #f0f4ff !important; }
+    #changelist table tbody td {
+        padding: 12px !important;
+        border-bottom: 1px solid var(--border-color) !important;
+        color: var(--text-primary) !important;
+    }
+    
+    .button, input[type="submit"], input[type="button"], .submit-row input, a.button {
+        background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%) !important;
+        color: white !important;
+        border: none !important;
+        padding: 10px 20px !important;
+        border-radius: 6px !important;
+        font-weight: 600 !important;
+        transition: all 0.3s !important;
+        cursor: pointer !important;
+        text-decoration: none !important;
+        display: inline-block !important;
+    }
+    
+    .button:hover, input[type="submit"]:hover {
+        transform: translateY(-2px) !important;
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4) !important;
+    }
+    
+    .button.default { background: linear-gradient(135deg, var(--success) 0%, #059669 100%) !important; }
+    .button.danger { background: linear-gradient(135deg, var(--error) 0%, #dc2626 100%) !important; }
+    
+    #changelist-filter {
+        background: var(--bg-card) !important;
+        border-radius: 8px !important;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05) !important;
+        border: 1px solid var(--border-color) !important;
+    }
+    
+    #changelist-filter h2 {
+        background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%) !important;
+        color: white !important;
+        padding: 12px 16px !important;
+        margin: 0 !important;
+        font-size: 14px !important;
+    }
+    
+    .paginator {
+        background: var(--bg-card) !important;
+        border-radius: 8px !important;
+        padding: 12px !important;
+        margin-top: 20px !important;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05) !important;
+        color: var(--text-primary) !important;
+        border: 1px solid var(--border-color) !important;
+    }
+    
+    .aligned label { font-weight: 600 !important; color: var(--text-primary) !important; }
+    
+    input, textarea, select {
+        border: 2px solid var(--border-color) !important;
+        border-radius: 6px !important;
+        padding: 10px !important;
+        transition: border-color 0.3s !important;
+        background: var(--bg-card) !important;
+        color: var(--text-primary) !important;
+    }
+    
+    input:focus, textarea:focus, select:focus {
+        border-color: var(--primary) !important;
+        outline: none !important;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1) !important;
+    }
+    
+    ul.messagelist { padding: 0 !important; margin: 0 0 20px 0 !important; }
+    ul.messagelist li {
+        background: linear-gradient(135deg, var(--success) 0%, #059669 100%) !important;
+        color: white !important;
+        padding: 12px 16px !important;
+        border-radius: 8px !important;
+        margin-bottom: 10px !important;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+        list-style: none !important;
+    }
+    ul.messagelist li.error { background: linear-gradient(135deg, var(--error) 0%, #dc2626 100%) !important; }
+    ul.messagelist li.warning { background: linear-gradient(135deg, var(--warning) 0%, #d97706 100%) !important; }
+    
+    /* 最近动作修复 */
+    .dashboard #content-main .module table td {
+        border-bottom: 1px solid var(--border-color) !important;
+        color: var(--text-primary) !important;
+    }
+</style>
+{% endblock %}

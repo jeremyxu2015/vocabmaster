@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>学生登录 - VocabMaster</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; display: flex; justify-content: center; align-items: center; margin: 0; }
+        .login-box { background: white; padding: 40px; border-radius: 20px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); width: 90%; max-width: 400px; text-align: center; }
+        h1 { color: #2d3748; margin-bottom: 10px; font-size: 24px; }
+        .subtitle { color: #718096; margin-bottom: 30px; font-size: 14px; }
+        .form-group { margin-bottom: 20px; text-align: left; }
+        label { display: block; margin-bottom: 8px; color: #4a5568; font-weight: 600; font-size: 14px; }
+        input, select { width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 16px; box-sizing: border-box; }
+        button { width: 100%; padding: 14px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; margin-top: 10px; }
+        .hint { margin-top: 20px; padding: 15px; background: #f0f4ff; border-radius: 8px; font-size: 13px; color: #667eea; text-align: left; }
+        .teacher-link { margin-top: 20px; font-size: 14px; }
+        .teacher-link a { color: #667eea; text-decoration: none; }
+        .alert { background: #fed7d7; color: #c53030; padding: 10px; border-radius: 6px; margin-bottom: 20px; font-size: 14px; }
+    </style>
+</head>
+<body>
+    <div class="login-box">
+        <h1>📚 英语单词打卡</h1>
+        <p class="subtitle">输入班级、学号和姓名即可登录</p>
+        {% if messages %}{% for message in messages %}<div class="alert">{{ message }}</div>{% endfor %}{% endif %}
+        <form method="post">{% csrf_token %}
+            <div class="form-group">
+                <label>班级</label>
+                <select name="class_name" required>
+                    <option value="">请选择班级</option>
+                    <option value="五1班">五年级1班</option>
+                    <option value="五2班">五年级2班</option>
+                    <option value="五3班">五年级3班</option>
+                    <option value="五4班">五年级4班</option>
+                </select>
+            </div>
+            <div class="form-group"><label>学号</label><input type="text" name="student_id" required placeholder="例如：01"></div>
+            <div class="form-group"><label>姓名</label><input type="text" name="real_name" required placeholder="你的真实姓名"></div>
+            <button type="submit">进入学习</button>
+        </form>
+        <div class="hint"><strong>💡 提示：</strong><br>• 首次登录会自动创建账号<br>• 初始密码是你的学号<br>• 忘记密码请联系老师</div>
+        <div class="teacher-link"><a href="{% url 'teacher_login' %}">👨‍🏫 教师入口</a></div>
+    </div>
+</body>
+</html>

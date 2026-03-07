@@ -1,0 +1,120 @@
+﻿{% load static %}
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>背单词 - VocabMaster</title>
+    <link rel="stylesheet" href="{% static 'words/css/modern.css' %}">
+    <style>
+        .homework-tag {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            display: inline-block;
+        }
+        .rating-simple {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-top: 2rem;
+        }
+        .rating-btn-simple {
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+            min-width: 120px;
+        }
+        .rating-btn-simple:hover { transform: scale(1.05); }
+        .btn-forgot { background: #fee2e2; color: #991b1b; }
+        .btn-remember { background: #dbeafe; color: #1e40af; }
+        .btn-mastered { background: #d1fae5; color: #065f46; }
+        .word-display { font-size: 3rem; font-weight: 800; margin: 2rem 0; }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo">📚 VocabMaster</div>
+        <div class="nav-links">
+            <a href="{% url 'dashboard' %}">返回</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="study-container">
+            {% if mode == 'homework' %}
+            <div class="homework-tag">📋 今日作业：{{ homework.title }}</div>
+            {% endif %}
+            
+            <div class="flip-card" id="flipCard" onclick="flipCard()">
+                <div class="flip-card-inner">
+                    <div class="flip-card-front">
+                        <div class="word-display">{{ word.word }}</div>
+                        <p class="phonetic">/{{ word.pronunciation }}/</p>
+                        <div style="margin-top: 2rem; color: rgba(255,255,255,0.8);">
+                            👆 点击卡片查看释义
+                        </div>
+                    </div>
+                    <div class="flip-card-back">
+                        <h2 style="font-size: 1.5rem; margin-bottom: 1rem;">{{ word.definition }}</h2>
+                        {% if word.example %}
+                        <div style="background: #f3f4f6; padding: 1rem; border-radius: 8px; margin: 1rem 0; text-align: left;">
+                            <p style="font-style: italic; margin-bottom: 0.5rem;">{{ word.example }}</p>
+                            <p style="color: #6b7280; font-size: 0.9rem;">{{ word.example_translation }}</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="rating-simple" id="ratingGroup" style="display: none;">
+                <button class="rating-btn-simple btn-forgot" onclick="submitAnswer(1)">
+                    😰<br>没记住
+                </button>
+                <button class="rating-btn-simple btn-remember" onclick="submitAnswer(2)">
+                    🤔<br>有点印象
+                </button>
+                <button class="rating-btn-simple btn-mastered" onclick="submitAnswer(3)">
+                    😊<br>记住了
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let isFlipped = false;
+        function flipCard() {
+            isFlipped = !isFlipped;
+            document.getElementById('flipCard').classList.toggle('flipped');
+            if (isFlipped) {
+                document.getElementById('ratingGroup').style.display = 'flex';
+            }
+        }
+        
+        function submitAnswer(quality) {
+            fetch('/answer/{{ word.id }}/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: 'quality=' + quality
+            }).then(() => {
+                window.location.reload();
+            });
+        }
+    </script>
+</body>
+</html>

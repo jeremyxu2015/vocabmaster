@@ -1,0 +1,24 @@
+{}
+{}
+
+{}
+<div id="content-main" style="max-width: 400px; margin: 50px auto; padding: 40px; background: white; border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,0.1);">
+<h1 style="text-align: center; margin-bottom: 30px; color: #1e293b;">📚 VocabMaster</h1>
+
+<form method="post" action="{{ app_path }}">
+{}
+<div style="margin-bottom: 20px;">
+<label style="display: block; margin-bottom: 8px; color: #64748b; font-weight: 600;">用户名:</label>
+<input type="text" name="username" style="width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 16px; box-sizing: border-box;">
+</div>
+
+<div style="margin-bottom: 30px;">
+<label style="display: block; margin-bottom: 8px; color: #64748b; font-weight: 600;">密码:</label>
+<input type="password" name="password" style="width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 16px; box-sizing: border-box;">
+</div>
+
+<input type="hidden" name="next" value="{{ next }}">
+<button type="submit" style="width: 100%; padding: 14px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer;">登录</button>
+</form>
+</div>
+{}

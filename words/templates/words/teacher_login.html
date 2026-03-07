@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>教师登录 - VocabMaster</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; display: flex; justify-content: center; align-items: center; margin: 0; }
+        .login-box { background: white; padding: 40px; border-radius: 20px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); width: 90%; max-width: 400px; }
+        h1 { text-align: center; color: #2d3748; margin-bottom: 30px; font-size: 24px; }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; color: #4a5568; font-weight: 600; }
+        input { width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 16px; }
+        button { width: 100%; padding: 14px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; margin-top: 10px; }
+        .back-link { text-align: center; margin-top: 20px; }
+        .back-link a { color: #667eea; text-decoration: none; font-size: 14px; }
+        .alert { background: #fed7d7; color: #c53030; padding: 10px; border-radius: 6px; margin-bottom: 20px; font-size: 14px; }
+    </style>
+</head>
+<body>
+    <div class="login-box">
+        <h1>👨‍🏫 教师登录</h1>
+        {% if messages %}{% for message in messages %}<div class="alert">{{ message }}</div>{% endfor %}{% endif %}
+        <form method="post">{% csrf_token %}
+            <div class="form-group"><label>教师账号</label><input type="text" name="username" required placeholder="请输入教师账号"></div>
+            <div class="form-group"><label>密码</label><input type="password" name="password" required placeholder="请输入密码"></div>
+            <button type="submit">登录</button>
+        </form>
+        <div class="back-link"><a href="{% url 'student_login' %}">← 返回学生登录</a></div>
+    </div>
+</body>
+</html>

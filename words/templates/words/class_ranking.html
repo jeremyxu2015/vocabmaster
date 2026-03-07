@@ -1,0 +1,169 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>班级排行榜 - VocabMaster</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            margin: 0;
+            padding-bottom: 2rem;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 2rem;
+        }
+        .header h1 { margin: 0; font-size: 2rem; }
+        .header p { margin: 0.5rem 0 0 0; opacity: 0.9; }
+        
+        .ranking-card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        .ranking-header {
+            background: #f8fafc;
+            padding: 1.5rem;
+            border-bottom: 2px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .ranking-title { font-weight: 700; font-size: 1.25rem; color: #2d3748; }
+        
+        .student-list { list-style: none; margin: 0; padding: 0; }
+        .student-item {
+            display: flex;
+            align-items: center;
+            padding: 1.25rem 1.5rem;
+            border-bottom: 1px solid #e2e8f0;
+            transition: background 0.2s;
+        }
+        .student-item:hover { background: #f8fafc; }
+        .student-item:last-child { border-bottom: none; }
+        
+        .rank-number {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1.25rem;
+            margin-right: 1rem;
+        }
+        .rank-1 { background: linear-gradient(135deg, #ffd700, #ffb700); color: white; }
+        .rank-2 { background: linear-gradient(135deg, #c0c0c0, #a0a0a0); color: white; }
+        .rank-3 { background: linear-gradient(135deg, #cd7f32, #b87333); color: white; }
+        .rank-other { background: #e2e8f0; color: #64748b; }
+        
+        .student-info { flex: 1; }
+        .student-name { font-weight: 600; color: #2d3748; font-size: 1.1rem; }
+        .student-class { color: #718096; font-size: 0.875rem; }
+        
+        .score {
+            text-align: right;
+        }
+        .score-number {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: #667eea;
+        }
+        .score-label { color: #718096; font-size: 0.75rem; }
+        
+        .you-badge {
+            background: #667eea;
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            margin-left: 0.5rem;
+        }
+        
+        .back-link {
+            text-align: center;
+            margin-top: 2rem;
+        }
+        .back-link a {
+            color: white;
+            text-decoration: none;
+            font-weight: 600;
+            padding: 0.75rem 2rem;
+            background: rgba(255,255,255,0.2);
+            border-radius: 9999px;
+            display: inline-block;
+            transition: background 0.2s;
+        }
+        .back-link a:hover { background: rgba(255,255,255,0.3); }
+        
+        .empty-state {
+            text-align: center;
+            padding: 4rem;
+            color: #718096;
+        }
+        .empty-icon { font-size: 4rem; margin-bottom: 1rem; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏆 班级排行榜</h1>
+            <p>看看谁背的单词最多！</p>
+        </div>
+        
+        <div class="ranking-card fade-in">
+            <div class="ranking-header">
+                <span class="ranking-title">📊 学习排行榜</span>
+                <span style="color: #718096; font-size: 0.875rem;">实时更新</span>
+            </div>
+            
+            <ul class="student-list">
+                {% for student in students %}
+                <li class="student-item" {% if student.id == my_id %}style="background: #f0f4ff;"{% endif %}>
+                    <div class="rank-number 
+                        {% if forloop.counter == 1 %}rank-1
+                        {% elif forloop.counter == 2 %}rank-2
+                        {% elif forloop.counter == 3 %}rank-3
+                        {% else %}rank-other{% endif %}">
+                        {{ forloop.counter }}
+                    </div>
+                    <div class="student-info">
+                        <div class="student-name">
+                            {{ student.first_name|default:student.username }}
+                            {% if student.id == my_id %}<span class="you-badge">你</span>{% endif %}
+                        </div>
+                        <div class="student-class">{{ student.userprofile.class_name|default:"未设置班级" }}</div>
+                    </div>
+                    <div class="score">
+                        <div class="score-number">{{ student.mastered_count|default:0 }}</div>
+                        <div class="score-label">已掌握</div>
+                    </div>
+                </li>
+                {% empty %}
+                <li class="empty-state">
+                    <div class="empty-icon">📚</div>
+                    <h3>还没有学习记录</h3>
+                    <p>快去背单词，成为第一名吧！</p>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+        
+        <div class="back-link">
+            <a href="{% url 'dashboard' %}">← 返回首页</a>
+        </div>
+    </div>
+</body>
+</html>
