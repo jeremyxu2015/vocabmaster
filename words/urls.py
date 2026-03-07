@@ -7,6 +7,11 @@ urlpatterns = [
     path('student-login/', views.student_login, name='student_login'),
     path('teacher-login/', views.teacher_login, name='teacher_login'),
     path('logout/', views.logout_view, name='logout'),
+    path('teacher/codes/generate/', views.generate_registration_code, name='generate_code'),
+    path('teacher/codes/', views.registration_code_list, name='code_list'),
+    path('teacher/codes/revoke/<int:code_id>/', views.revoke_code, name='revoke_code'),
+    path('game/', views.game_study, name='game_study'),
+    path('game/answer/', views.game_answer, name='game_answer'),
     
     # 学生学习
     path('dashboard/', views.dashboard, name='dashboard'),
@@ -14,7 +19,7 @@ urlpatterns = [
     path('review/', views.review, name='review'),
     path('answer/<int:word_id>/', views.answer, name='answer'),
     path('ranking/', views.class_ranking, name='ranking'),
-path('change-password/', views.change_password, name='change_password'),
+    path('change-password/', views.change_password, name='change_password'),
     
     # 教师管理
     path('teacher/', views.teacher_dashboard, name='teacher_dashboard'),

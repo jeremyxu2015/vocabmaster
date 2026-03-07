@@ -1,0 +1,237 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎮 闯关背单词 - Level {{ level }}</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .game-container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 600px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+        .level-badge {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 18px;
+        }
+        .stats {
+            display: flex;
+            gap: 20px;
+        }
+        .stat-item {
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #667eea;
+        }
+        .stat-label {
+            font-size: 12px;
+            color: #718096;
+        }
+        .lives {
+            font-size: 24px;
+        }
+        .word-card {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 40px;
+            border-radius: 15px;
+            text-align: center;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+        }
+        .word-text {
+            font-size: 48px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+        .phonetic {
+            font-size: 20px;
+            opacity: 0.9;
+        }
+        .options {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        .option-btn {
+            padding: 20px;
+            border: 2px solid #e2e8f0;
+            background: white;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s;
+            text-align: center;
+        }
+        .option-btn:hover {
+            border-color: #667eea;
+            background: #f0f4ff;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+        }
+        .option-btn.correct {
+            background: #d1fae5;
+            border-color: #10b981;
+            animation: pulse 0.5s;
+        }
+        .option-btn.wrong {
+            background: #fee2e2;
+            border-color: #ef4444;
+            animation: shake 0.5s;
+        }
+        .combo {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 18px;
+            color: #f59e0b;
+            font-weight: bold;
+        }
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+        .game-over {
+            text-align: center;
+            display: none;
+        }
+        .game-over h2 {
+            color: #ef4444;
+            font-size: 32px;
+        }
+        .btn-restart {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 10px;
+            font-size: 18px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="header">
+            <div class="level-badge">🏆 Level {{ level }}</div>
+            <div class="stats">
+                <div class="stat-item">
+                    <div class="stat-value">{{ progress.total_score }}</div>
+                    <div class="stat-label">积分</div>
+                </div>
+                <div class="stat-item lives">{{ lives }}</div>
+            </div>
+        </div>
+
+        <div id="game-content">
+            <div class="word-card">
+                <div class="word-text">{{ word.word }}</div>
+                <div class="phonetic">/{{ word.pronunciation }}/</div>
+            </div>
+
+            <div class="options" id="options">
+                {% for opt in options %}
+                <button class="option-btn" onclick="selectAnswer({{ opt.id }}, this)">
+                    {{ opt.definition|truncatechars:20 }}
+                </button>
+                {% endfor %}
+            </div>
+
+            <div class="combo" id="combo">
+                {% if progress.combo > 0 %}🔥 连击 x{{ progress.combo }}!{% endif %}
+            </div>
+        </div>
+
+        <div class="game-over" id="game-over">
+            <h2>💔 生命耗尽！</h2>
+            <p>别灰心，再试一次！</p>
+            <button class="btn-restart" onclick="location.reload()">重新开始</button>
+        </div>
+
+        <div class="game-over" id="level-up" style="display: none;">
+            <h2 style="color: #10b981;">🎉 恭喜通关！</h2>
+            <p>准备好挑战下一关了吗？</p>
+            <button class="btn-restart" onclick="location.reload()">进入下一关</button>
+        </div>
+    </div>
+
+    <script>
+        function selectAnswer(wordId, btnElement) {
+            // 禁用所有按钮
+            document.querySelectorAll('.option-btn').forEach(btn => {
+                btn.disabled = true;
+            });
+
+            fetch('/game/answer/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: 'word_id={{ word.id }}&selected_id=' + wordId
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.correct) {
+                    btnElement.classList.add('correct');
+                    document.getElementById('combo').innerHTML = 
+                        '🔥 连击 x' + data.combo + '! +' + data.points + '分';
+                    
+                    if (data.level_up) {
+                        setTimeout(() => {
+                            document.getElementById('game-content').style.display = 'none';
+                            document.getElementById('level-up').style.display = 'block';
+                        }, 1000);
+                    } else {
+                        setTimeout(() => location.reload(), 1500);
+                    }
+                } else {
+                    btnElement.classList.add('wrong');
+                    if (data.game_over) {
+                        setTimeout(() => {
+                            document.getElementById('game-content').style.display = 'none';
+                            document.getElementById('game-over').style.display = 'block';
+                        }, 1000);
+                    } else {
+                        setTimeout(() => location.reload(), 1500);
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>

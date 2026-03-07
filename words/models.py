@@ -1,6 +1,74 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.utils import timezone
+import random
+import string
+from datetime import timedelta
+
+class RegistrationCode(models.Model):
+    """教师生成的注册验证码"""
+    code = models.CharField(max_length=6, unique=True, verbose_name='验证码')
+    class_name = models.CharField(max_length=20, verbose_name='目标班级')
+    teacher = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name='生成教师')
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='生成时间')
+    expires_at = models.DateTimeField(verbose_name='过期时间')
+    is_used = models.BooleanField(default=False, verbose_name='已使用')
+    used_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, 
+                                related_name='used_codes', verbose_name='使用学生')
+    used_at = models.DateTimeField(null=True, blank=True, verbose_name='使用时间')
+    max_uses = models.IntegerField(default=1, verbose_name='最大使用次数')  # 1=一次性，>1=批量注册
+    used_count = models.IntegerField(default=0, verbose_name='已使用次数')
+    
+    class Meta:
+        verbose_name = '注册验证码'
+        verbose_name_plural = '注册验证码管理'
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"{self.class_name} - {self.code} ({'已用完' if self.is_used else '有效'})"
+    
+    @classmethod
+    def generate_code(cls, class_name, teacher, max_uses=1, valid_minutes=15):
+        """生成6位数字验证码"""
+        # 生成不重复的6位数字
+        while True:
+            code = ''.join(random.choices(string.digits, k=6))
+            if not cls.objects.filter(code=code, is_used=False).exists():
+                break
+        
+        expires_at = timezone.now() + timedelta(minutes=valid_minutes)
+        
+        return cls.objects.create(
+            code=code,
+            class_name=class_name,
+            teacher=teacher,
+            expires_at=expires_at,
+            max_uses=max_uses
+        )
+    
+    def is_valid(self):
+        """检查验证码是否有效"""
+        if self.is_used and self.used_count >= self.max_uses:
+            return False
+        if timezone.now() > self.expires_at:
+            return False
+        return True
+    
+    def use(self, user):
+        """使用验证码"""
+        if not self.is_valid():
+            return False
+        
+        self.used_count += 1
+        if self.used_count >= self.max_uses:
+            self.is_used = True
+        
+        if self.used_count == 1:  # 第一次使用记录使用者
+            self.used_by = user
+            self.used_at = timezone.now()
+        
+        self.save()
+        return True
 
 class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)

@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container">
+    <h2>🔐 生成注册验证码</h2>
+    <p class="text-muted">为学生生成一次性注册验证码，防止陌生人随意注册</p>
+    
+    <div class="card mt-4">
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+                
+                <div class="form-group mb-3">
+                    <label>目标班级 <span class="text-danger">*</span></label>
+                    <select name="class_name" class="form-control" required>
+                        <option value="">-- 选择班级 --</option>
+                        {% for class in classes %}
+                        <option value="{{ class }}">{{ class }}</option>
+                        {% endfor %}
+                    </select>
+                    <small class="form-text text-muted">验证码仅对该班级有效</small>
+                </div>
+                
+                <div class="form-group mb-3">
+                    <label>有效时长（分钟）</label>
+                    <select name="valid_minutes" class="form-control">
+                        <option value="5">5分钟（临时测试）</option>
+                        <option value="15" selected>15分钟（默认）</option>
+                        <option value="30">30分钟（课间使用）</option>
+                        <option value="60">1小时（整节课）</option>
+                        <option value="1440">24小时（全天开放）</option>
+                    </select>
+                </div>
+                
+                <div class="form-group mb-3">
+                    <label>可使用次数</label>
+                    <input type="number" name="max_uses" class="form-control" 
+                           value="1" min="1" max="50">
+                    <small class="form-text text-muted">
+                        1=单个学生使用，>1=全班通用（如填45供全班使用）
+                    </small>
+                </div>
+                
+                <button type="submit" class="btn btn-primary btn-lg">
+                    🎯 生成验证码
+                </button>
+                
+                <a href="{% url 'registration_code_list' %}" class="btn btn-secondary">
+                    查看已有验证码
+                </a>
+            </form>
+        </div>
+    </div>
+    
+    <div class="alert alert-info mt-4">
+        <h5>📋 使用说明：</h5>
+        <ol>
+            <li>选择要开放注册的班级</li>
+            <li>设置验证码有效期（建议15分钟）</li>
+            <li>点击生成，将6位数字验证码告诉学生</li>
+            <li>学生在登录页输入验证码才能注册/登录</li>
+            <li>验证码过期或次数用尽后自动失效</li>
+        </ol>
+    </div>
+</div>
+{% endblock %}

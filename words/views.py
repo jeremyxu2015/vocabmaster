@@ -10,24 +10,168 @@ from .models import Word, UserWord, DailyStats, UserProfile, Homework, HomeworkS
 from .decorators import teacher_required
 import random
 from datetime import datetime, timedelta
+from django.views.decorators.csrf import csrf_exempt
+
+@login_required
+def game_study(request):
+    """游戏模式：闯关背单词"""
+    user = request.user
+    progress, _ = GameProgress.objects.get_or_create(user=user)
+    
+    # 每关5个单词，根据等级选择难度
+    words_per_level = 5
+    difficulty = min(progress.current_level // 5 + 1, 5)  # 每5关升难度
+    
+    # 获取当前关卡单词（优先作业，其次按难度）
+    if hasattr(user, 'userprofile'):
+        homework = Homework.objects.filter(
+            class_name=user.userprofile.class_name,
+            is_active=True,
+            due_date__gte=timezone.now().date()
+        ).first()
+        if homework:
+            words = list(homework.words.all()[:words_per_level])
+        else:
+            words = list(Word.objects.filter(difficulty=difficulty)[:words_per_level])
+    else:
+        words = list(Word.objects.filter(difficulty=difficulty)[:words_per_level])
+    
+    if len(words) < words_per_level:
+        messages.info(request, '恭喜！你已通关所有单词！')
+        return redirect('dashboard')
+    
+    # 打乱顺序作为选项
+    word = random.choice(words)
+    options = random.sample(words, min(4, len(words)))
+    if word not in options:
+        options[0] = word
+    random.shuffle(options)
+    
+    return render(request, 'words/game.html', {
+        'word': word,
+        'options': options,
+        'progress': progress,
+        'level': progress.current_level,
+        'lives': '❤️' * progress.lives
+    })
+
+@csrf_exempt
+@login_required
+def game_answer(request):
+    """游戏模式答题"""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Invalid method'})
+    
+    word_id = request.POST.get('word_id')
+    selected_id = request.POST.get('selected_id')
+    
+    word = get_object_or_404(Word, id=word_id)
+    user_word, created = UserWord.objects.get_or_create(user=request.user, word=word)
+    progress = GameProgress.objects.get(user=request.user)
+    
+    correct = (str(word_id) == str(selected_id))
+    
+    if correct:
+        # 答对：连击+1，加积分
+        progress.combo += 1
+        if progress.combo > progress.max_combo:
+            progress.max_combo = progress.combo
+        points = progress.add_score(10)
+        
+        # SM-2算法更新
+        from .utils import calculate_next_review
+        calculate_next_review(user_word, 5)  # 游戏模式默认满分
+        
+        # 检查通关（每5关一个Boss）
+        if progress.combo >= 5:
+            progress.current_level += 1
+            progress.combo = 0
+            progress.lives = min(progress.lives + 1, 5)  # 通关奖励生命
+            progress.save()
+            return JsonResponse({
+                'correct': True,
+                'points': points,
+                'level_up': True,
+                'message': f'🎉 通关！进入第 {progress.current_level} 关！'
+            })
+    else:
+        # 答错：连击中断，扣生命
+        progress.combo = 0
+        progress.lives -= 1
+        progress.save()
+        
+        if progress.lives <= 0:
+            # 生命耗尽，降级或重来
+            if progress.current_level > 1:
+                progress.current_level -= 1
+            progress.lives = 3
+            progress.save()
+            return JsonResponse({
+                'correct': False,
+                'game_over': True,
+                'message': '💔 生命耗尽，退回上一关！'
+            })
+    
+    progress.save()
+    return JsonResponse({
+        'correct': correct,
+        'points': points if correct else 0,
+        'combo': progress.combo,
+        'lives': progress.lives,
+        'total_score': progress.total_score
+    })
 
 # ========== 学生登录（学号+班级） ==========
 def student_login(request):
-    """学生用班级+学号登录"""
+    """增强版学生登录（需教师验证码）"""
+    # 先生成验证码图片（如果有需要）
+    captcha_img = None
+    
+    if request.method == 'GET':
+        # 可选：保留图形验证码防机器人
+        pass
+    
     if request.method == 'POST':
         class_name = request.POST.get('class_name')
         student_id = request.POST.get('student_id')
         real_name = request.POST.get('real_name')
+        reg_code = request.POST.get('registration_code', '').strip()
         
-        # 查找用户：班级_学号 作为用户名
+        # 第一步：验证教师发放的注册验证码（关键安全验证）
+        if not reg_code:
+            messages.error(request, '❌ 请输入教师发放的6位注册验证码')
+            return render(request, 'words/student_login.html', {'show_code_input': True})
+        
+        try:
+            code_obj = RegistrationCode.objects.get(
+                code=reg_code,
+                class_name=class_name,
+                is_used=False
+            )
+            
+            if not code_obj.is_valid():
+                if timezone.now() > code_obj.expires_at:
+                    messages.error(request, '❌ 验证码已过期，请联系老师重新获取')
+                else:
+                    messages.error(request, '❌ 验证码使用次数已达上限')
+                return render(request, 'words/student_login.html', {'show_code_input': True})
+                
+        except RegistrationCode.DoesNotExist:
+            messages.error(request, '❌ 验证码无效，请确认：1.班级选择正确 2.输入无误')
+            return render(request, 'words/student_login.html', {'show_code_input': True})
+        
+        # 验证码通过，继续原有登录逻辑
         username = f"{class_name}_{student_id}"
-        user = authenticate(request, username=username, password=student_id)  # 初始密码是学号
+        user = authenticate(request, username=username, password=student_id)
         
         if user is not None:
-            login(request, user)
-            return redirect('dashboard')
+            # 已有账号，正常使用验证码（消耗一次）
+            if code_obj.use(user):
+                login(request, user)
+                messages.success(request, f'欢迎回来，{real_name}！')
+                return redirect('dashboard')
         else:
-            # 如果不存在，自动创建（首次登录）
+            # 首次注册（自动创建账号）
             try:
                 user = User.objects.create_user(
                     username=username,
@@ -40,13 +184,71 @@ def student_login(request):
                     class_name=class_name,
                     real_name=real_name
                 )
-                login(request, user)
-                messages.success(request, f'欢迎{real_name}，首次登录已自动创建账号')
-                return redirect('dashboard')
+                
+                # 使用验证码（消耗一次）
+                if code_obj.use(user):
+                    messages.success(request, 
+                        f'🎉 账号创建成功！班级：{class_name}，学号：{student_id}，请立即修改密码')
+                    return redirect('change_password')
+                    
             except Exception as e:
-                messages.error(request, '登录失败，请检查班级和学号')
+                messages.error(request, '注册失败，请检查学号是否已被使用')
     
-    return render(request, 'words/student_login.html')
+    return render(request, 'words/student_login.html', {'show_code_input': True})
+@login_required
+@teacher_required
+def generate_registration_code(request):
+    """教师生成注册验证码"""
+    if request.method == 'POST':
+        class_name = request.POST.get('class_name')
+        valid_minutes = int(request.POST.get('valid_minutes', 15))
+        max_uses = int(request.POST.get('max_uses', 1))
+        
+        if not class_name:
+            messages.error(request, '请选择班级')
+            return redirect('generate_registration_code')
+        
+        code_obj = RegistrationCode.generate_code(
+            class_name=class_name,
+            teacher=request.user,
+            max_uses=max_uses,
+            valid_minutes=valid_minutes
+        )
+        
+        messages.success(request, 
+            f'✅ 验证码已生成：【{code_obj.code}】，有效期{valid_minutes}分钟，可使用{max_uses}次')
+        return redirect('registration_code_list')
+    
+    # 获取教师管理的班级（从现有学生班级中提取）
+    classes = UserProfile.objects.filter(
+        is_teacher=False
+    ).values_list('class_name', flat=True).distinct()
+    
+    return render(request, 'words/teacher/generate_code.html', {
+        'classes': classes
+    })
+
+@login_required
+@teacher_required
+def registration_code_list(request):
+    """查看验证码列表"""
+    codes = RegistrationCode.objects.filter(
+        teacher=request.user
+    ).order_by('-created_at')[:50]
+    
+    return render(request, 'words/teacher/code_list.html', {
+        'codes': codes
+    })
+
+@login_required
+@teacher_required
+def revoke_code(request, code_id):
+    """作废验证码"""
+    code = get_object_or_404(RegistrationCode, id=code_id, teacher=request.user)
+    code.is_used = True  # 强制标记为已使用
+    code.save()
+    messages.success(request, f'验证码 {code.code} 已作废')
+    return redirect('registration_code_list')
 
 def teacher_login(request):
     """教师用传统方式登录"""
